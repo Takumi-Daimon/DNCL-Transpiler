@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="lib/codemirror.js"></script>
+    <link rel="stylesheet" href="lib/codemirror.css">
+    <script src="dncl-transpiler.js"></script>
+    <title>dncl-transpiler</title>
+</head>
+
+<style>
+    .console {
+        background-color: black;
+        width: 100%;
+        height: 300px;
+        color: rgb(255, 255, 255);
+        font-size: 16px;
+        font-family: monospace;
+        resize: none;
+        box-sizing: border-box;
+        border: none;
+    }
+</style>
+
+<body>
+    <h3>dncl-transpiler</h3>
+    <div>
+        <input type="button" value="実行" onclick="run()">
+        <input id="load" type="file" accept=".txt" />
+        <textarea id="editor">
+/* * 
+ * ニュートン法による平方根の近似計算
+ **/
+//xの平方根の近似値を返す
+関数 ニュートン法(x)は
+	a ← {x}
+	lim ← 1000
+	n を 1 から lim まで 1 ずつ増やしながら,
+		a[n ＋ 1] ← (a[n] ＋ x / a[n]) / 2
+	を繰り返す
+	a[lim] を返す
+を実行する
+
+x を 2 から 10 まで 1 ずつ増やしながら,
+	"√" ＋ x ＋ "≒" ＋ ニュートン法(x) を表示する
+を繰り返す</textarea>
+        <textarea id="console" class="console" spellcheck="false"></textarea>
+    </div>
+</body>
+
+<script>
+    const editor = CodeMirror.fromTextArea(document.getElementById('editor'), {
+        lineNumbers: true,
+        indentUnit: 4,
+        lineWrapping: false,
+    });
+    const output = document.getElementById("console");
+
+    const input = document.getElementById("load");
+    input.addEventListener('change', function (e) {
+        let file = e.target.files;
+        let reader = new FileReader();
+        reader.onload = function () {
+            editor.setValue(reader.result);
+        };
+        if (file[0] instanceof Blob) {
+            reader.readAsText(file[0], "UTF-8");
+        }
+    });
+
+    /**
+     * 組み込み関数の定義
+     * */
+    DNCL.Functions.BuiltinFuncs = {
+        "入力": {
+            params: [], paramCount: 0,
+            native_f: function $入力() {
+                var val = window.prompt("値を入力してください");
+                return val == null ? "" : val;
+            }
+        },
+        "大きさ": {
+            params: ["x"], paramCount: 1,
+            native_f: function $大きさ(x) { if (typeof x == 'string') { return x.length; } else if (typeof x == 'object') { return Object.keys(x).length - 1; } return 0; }
+        },
+        "平方根": {
+            params: ["x"], paramCount: 1, native_f: function $平方根(x) { return Math.sqrt(x); }
+        },
+        "絶対値": {
+            params: ["x"], paramCount: 1, native_f: function $絶対値(x) { return Math.abs(x); }
+        },
+        "数値に変換": {
+            params: ["x"], paramCount: 1, native_f: function $数値に変換(x) { return Number(x); }
+        },
+        "乱数": {
+            params: [], paramCount: 0, native_f: function $乱数() { return Math.random(); }
+        },
+        "sin": {
+            params: ["x"], paramCount: 1, native_f: function $sin(x) { return Math.sin(Math.PI * x / 180); }
+        },
+        "cos": {
+            params: ["x"], paramCount: 1, native_f: function $cos(x) { return Math.cos(Math.PI * x / 180); }
+        },
+        "tan": {
+            params: ["x"], paramCount: 1, native_f: function $tan(x) { return Math.tan(Math.PI * x / 180); }
+        },
+        "log": {
+            params: ["x"], paramCount: 1, native_f: function $log(x) { return Math.log(x); }
+        },
+        "log2": {
+            params: ["x"], paramCount: 1, native_f: function $log2(x) { return Math.log2(x); }
+        },
+        "log10": {
+            params: ["x"], paramCount: 1, native_f: function $log10(x) { return Math.log10(x); }
+        }
+    };
+
+    /**
+     * 各種設定
+     * */
+    DNCL.Setting = {
+        array_begins_from: 1,//配列の先頭インデックス
+        includes_comment: true,//コメント文を含むかの設定
+        output_func: 'log'//出力関数
+    };
+
+    function run() {
+        let js_code = "";
+        output.value = "";
+        try {
+            let result = DNCL.Transpile(editor.getValue());
+            let dncl_code = result.dncl;
+            js_code = result.js;
+            editor.setValue(dncl_code);
+        } catch (e) {//コンパイルエラー
+            output.value = e.message + "\n[★付近でエラーが発生]\n" + e.errorView;
+            return;
+        }
+        try {
+            console.log(js_code);
+            eval(js_code);
+        } catch (e) {//ランタイムエラー
+            let errorView = DNCL.Parser.createView({ row: e.line, col: e.charAt });
+            output.value = e.message + "\n[★付近でエラーが発生]\n" + errorView;
+        }
+    }
+
+    /**
+     * 出力関数
+     * */
+    function log(msg) {
+        output.value += msg;
+    }
+
+</script>
+
+</html>
