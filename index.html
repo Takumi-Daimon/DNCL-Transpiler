@@ -31,21 +31,34 @@
         <input id="load" type="file" accept=".txt" />
         <textarea id="editor">
 /* * 
- * ニュートン法による平方根の近似計算
+ * クイックソート
  **/
-//xの平方根の近似値を返す
-関数 ニュートン法(x)は
-	a ← {x}
-	lim ← 1000
-	n を 1 から lim まで 1 ずつ増やしながら,
-		a[n ＋ 1] ← (a[n] ＋ x / a[n]) / 2
+関数 分割(A,p,r)は
+	x ← A[r]
+	i ← p － 1
+	j を p から r － 1 まで 1 ずつ増やしながら,
+		もし A[j] ≦ x ならば
+			i ← i ＋ 1
+			copy ← A[i], A[i] ← A[j], A[j] ← copy
+		を実行する
 	を繰り返す
-	a[lim] を返す
+	copy ← A[i ＋ 1], A[i ＋ 1] ← A[r], A[r] ← copy
+	i ＋ 1 を返す
 を実行する
 
-x を 2 から 10 まで 1 ずつ増やしながら,
-	"√" ＋ x ＋ "≒" ＋ ニュートン法(x) を表示する
-を繰り返す</textarea>
+手続き クイックソート(A,p,r)は
+	もし p ＜ r ならば
+		q ← 分割(A,p,r)
+		クイックソート(A,p,q － 1)
+		クイックソート(A,q ＋ 1,r)
+	を実行する
+を実行する
+
+A ← {22,375,721,110,399,222,19,544}
+A を表示する
+クイックソート(A,1,大きさ(A))
+A を表示する
+</textarea>
         <textarea id="console" class="console" spellcheck="false"></textarea>
     </div>
 </body>
